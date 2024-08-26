@@ -1,0 +1,52 @@
+server:
+  port: 9092
+
+spring:
+  application:
+    name: ORDER-SERVICE
+
+  datasource:
+    url: jdbc:h2:mem:orders
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+management:
+  health:
+    circuitbreakers:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
+
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      orderService:
+        registerHealthIndicator: true
+        eventConsumerBufferSize: 10
+        failureRateThreshold: 50 # If incoming request fails more than 50%, It will throw error
+        minimumNumberOfCalls: 5 # It will retry 5 times before decide threshold count
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 5s # After 5sec, It will retry to connect
+        permittedNumberOfCallsInHalfOpenState: 3 # It will try 3 times in half open state before switch to closed state
+        slidingWindowSize: 2 # After 2sec in half open state it will try to connect
+        slidingWindowType: COUNT_BASED
+
+  retry:
+    instances:
+      orderService:
+        maxRetryAttempts: 5
+        waitDuration: 5s
